@@ -1,5 +1,5 @@
 # predictive-ml-algorithms
-This repo consists of ml algorithms that can train a model accurately to predict the real time concrete strength.
+This repo consists of ml algorithms used to train our model to predict the real time concrete strength.
 
 # Step-by-step procedure on how to set up the project on your devices
 1. Download and install an IDE preferably Visual Studio Code (VS Code) from https://code.visualstudio.com/.
