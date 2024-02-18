@@ -1,4 +1,4 @@
 # .gitignore
 
 # Python virtual environment
-venv/
+venv/Lib/site-packages
