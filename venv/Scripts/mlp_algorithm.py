@@ -6,6 +6,8 @@ from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy.stats import norm
+from scipy.stats import linregress
 import os
 
 # GitHub raw file link
@@ -40,6 +42,18 @@ print("\nMissing Values:\n", missing_values)
 data_types = df.dtypes
 print("\nData Types:\n", data_types)
 
+# Visualize outliers using boxplots
+plt.figure(figsize=(10, 7))
+
+# Remove units from parameter names
+params_without_units = [param.split(' ')[0] for param in df.drop('Concrete compressive strength (MPa, megapascals) ', axis=1).columns]
+
+# Create boxplot without units in parameter names
+sns.boxplot(data=df.drop('Concrete compressive strength (MPa, megapascals) ', axis=1))
+plt.xticks(range(len(params_without_units)), params_without_units)  # Set x-axis ticks with modified parameter names
+plt.title('Boxplot of Features')
+plt.show()
+
 # Summary statistics
 summary_stats = df.describe()
 print("\nSummary Statistics:\n", summary_stats)
@@ -59,7 +73,7 @@ X = df.drop('Concrete compressive strength (MPa, megapascals) ', axis=1)
 y = df['Concrete compressive strength (MPa, megapascals) ']
 
 # Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
 
 # Step 3: Feature Scaling
 
@@ -88,12 +102,38 @@ X_test_scaled = scaler.transform(X_test)
 # Make predictions on the test set
 y_pred = mlp_model.predict(X_test_scaled)
 
-# Visualize actual vs. predicted compressive strength
-plt.figure(figsize=(8, 6))
-plt.scatter(y_test, y_pred)
-plt.title('Actual vs. Predicted Compressive Strength')
-plt.xlabel('Actual Compressive Strength')
-plt.ylabel('Predicted Compressive Strength')
+# Step 5.5: Normal Distribution Curve and Bar Charts
+
+plt.figure(figsize=(12, 10))
+
+# Iterate through each feature for plotting
+for i, feature in enumerate(X.columns):
+    plt.subplot(3, 3, i+1)
+    plt.subplots_adjust(hspace=0.5, wspace=0.5)
+
+    # Plot histogram
+    sns.histplot(X[feature], kde=True, color='skyblue', stat='density')
+
+    # Calculate statistics for the current parameter
+    mean_val = X[feature].mean()
+    std_val = X[feature].std()
+    min_val = X[feature].min()
+    max_val = X[feature].max()
+
+    # Add vertical lines for mean, min, and max
+    plt.axvline(mean_val, color='orange', linestyle='dashed', linewidth=2, label='Mean')
+    plt.axvline(min_val, color='green', linestyle='dashed', linewidth=2, label='Min')
+    plt.axvline(max_val, color='red', linestyle='dashed', linewidth=2, label='Max')
+
+    # Add normal distribution curve
+    x_axis = np.linspace(min_val, max_val, 100)
+    plt.plot(x_axis, norm.pdf(x_axis, mean_val, std_val), color='purple', label='Normal Distribution')
+
+    plt.ylabel('Relative Frequency')
+    plt.legend()
+
+
+plt.tight_layout()
 plt.show()
 
 # Step 6: Evaluate the Model
@@ -132,3 +172,47 @@ user_pred_strength = mlp_model.predict(user_df)
 
 # Print the predicted compressive strength
 print(f'Predicted Compressive Strength at {feature} days: {user_pred_strength[0]}')
+
+
+# Scatter plot for Validation Set with Fitted Line
+plt.figure(figsize=(10, 6))
+plt.scatter(y_test, y_pred, color='blue', label='Validation Set')
+plt.title('Actual vs. Predicted Compressive Strength in Validation Set')
+plt.xlabel('Actual Compressive Strength')
+plt.ylabel('Predicted Compressive Strength')
+
+# Fit a linear regression line
+slope, intercept, _, _, _ = linregress(y_test, y_pred)
+fit_line = slope * y_test + intercept
+plt.plot(y_test, fit_line, '--', color='red', linewidth=2, label='Fitted Line')
+
+# Add the equation of the fitted line to the chart
+equation_text = f'Fitted Line: y = {slope:.2f}x + {intercept:.2f}'
+plt.text(0.5, 0.92, equation_text, transform=plt.gca().transAxes, fontsize=10, verticalalignment='top')
+
+r2_text = f'R-squared (R2): {r2:.3f}'
+plt.text(0.5, 0.85, r2_text, transform=plt.gca().transAxes, fontsize=10, verticalalignment='top')
+
+plt.legend()
+plt.show()
+
+# Scatter plot for Test Set with Fitted Line
+plt.figure(figsize=(10, 6))
+plt.scatter(y_test, y_pred, color='green', label='Test Set', alpha=0.7)
+plt.title('Actual vs. Predicted Compressive Strength')
+plt.xlabel('Actual Compressive Strength')
+plt.ylabel('Predicted Compressive Strength')
+
+# Fit a linear regression line
+slope, intercept, _, _, _ = linregress(y_test, y_pred)
+fit_line = slope * y_test + intercept
+plt.plot(y_test, fit_line, '--', color='red', linewidth=2, label='Fitted Line')
+
+# Add the equation of the fitted line to the chart
+equation_text = f'Fitted Line: y = {slope:.2f}x + {intercept:.2f}'
+plt.text(0.5, 0.92, equation_text, transform=plt.gca().transAxes, fontsize=10, verticalalignment='top')
+
+plt.text(0.5, 0.85, r2_text, transform=plt.gca().transAxes, fontsize=10, verticalalignment='top')
+
+plt.legend()
+plt.show()

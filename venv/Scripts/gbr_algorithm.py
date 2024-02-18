@@ -180,7 +180,6 @@ for i, feature in enumerate(X.columns):
     plt.ylabel('Relative Frequency')
     plt.legend()
 
-
 plt.tight_layout()
 plt.show()
 
