@@ -9,6 +9,7 @@ import seaborn as sns
 from scipy.stats import norm
 from scipy.stats import linregress
 import os
+import random
 
 # GitHub raw file link
 github_link = "https://github.com/hoangnguyence/hpconcrete/raw/master/data/hpc_compressive_strength.xlsx"
@@ -74,7 +75,7 @@ X = df.drop('Concrete compressive strength (MPa, megapascals) ', axis=1)
 y = df['Concrete compressive strength (MPa, megapascals) ']
 
 # Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
 
 # Step 3: Feature Scaling
 
@@ -143,7 +144,7 @@ plt.show()
 
 # Calculate R-squared
 r2 = r2_score(y_test, y_pred)
-print(f'R-squared (R2): {r2}')
+print(f'R-squared (R²): {r2}')
 
 # Calculate Mean Squared Error (MSE)
 mse = mean_squared_error(y_test, y_pred)
@@ -183,7 +184,7 @@ print(f'Predicted Compressive Strength: {user_pred_strength[0]}')
 # Scatter plot for Validation Set with Fitted Line
 plt.figure(figsize=(10, 6))
 plt.scatter(y_test, y_pred, color='blue', label='Validation Set')
-plt.title('Actual vs. Predicted Compressive Strength in Validation Set')
+# plt.title('Actual vs. Predicted Compressive Strength in Validation Set')
 plt.xlabel('Actual Compressive Strength')
 plt.ylabel('Predicted Compressive Strength')
 
@@ -196,7 +197,7 @@ plt.plot(y_test, fit_line, '--', color='red', linewidth=2, label='Fitted Line')
 equation_text = f'Fitted Line: y = {slope:.2f}x + {intercept:.2f}'
 plt.text(0.5, 0.92, equation_text, transform=plt.gca().transAxes, fontsize=10, verticalalignment='top')
 
-r2_text = f'R-squared (R2): {r2:.3f}'
+r2_text = f'R-squared (R²): {r2:.3f}'
 plt.text(0.5, 0.85, r2_text, transform=plt.gca().transAxes, fontsize=10, verticalalignment='top')
 
 plt.legend()
@@ -205,7 +206,7 @@ plt.show()
 # Scatter plot for Test Set with Fitted Line
 plt.figure(figsize=(10, 6))
 plt.scatter(y_test, y_pred, color='green', label='Test Set', alpha=0.7)
-plt.title('Actual vs. Predicted Compressive Strength')
+# plt.title('Actual vs. Predicted Compressive Strength')
 plt.xlabel('Actual Compressive Strength')
 plt.ylabel('Predicted Compressive Strength')
 
@@ -221,4 +222,62 @@ plt.text(0.5, 0.92, equation_text, transform=plt.gca().transAxes, fontsize=10, v
 plt.text(0.5, 0.85, r2_text, transform=plt.gca().transAxes, fontsize=10, verticalalignment='top')
 
 plt.legend()
+plt.show()
+
+# Create an array of sample indices for plotting
+sample_indices = np.arange(len(y_test))
+
+# Sort the sample indices
+sorted_indices = np.argsort(sample_indices)
+sorted_sample_indices = sample_indices[sorted_indices]
+
+# Sort the actual and predicted values accordingly
+sorted_y_test = y_test.values[sorted_indices]
+sorted_y_pred = y_pred[sorted_indices]
+
+# Plot the scatter plot diagram
+plt.figure(figsize=(10, 6))
+plt.scatter(sorted_sample_indices, sorted_y_test, color='red', label='Actual', alpha=0.7)
+plt.scatter(sorted_sample_indices, sorted_y_pred, color='blue', label='Predicted', alpha=0.7)
+
+# Connect actual and predicted values with lines
+plt.plot(sorted_sample_indices, sorted_y_test, color='red', linestyle='-', linewidth=1)
+plt.plot(sorted_sample_indices, sorted_y_pred, color='blue', linestyle='-', linewidth=1)
+
+plt.xlabel('Sample Number')
+plt.ylabel('Compressive Strength')
+# plt.title('Actual vs. Predicted Compressive Strength by Sample Number')
+plt.legend()
+plt.show()
+
+# Select 10 random samples from the dataset
+random.seed(100)
+sample_indices = random.sample(range(len(y_test)), 10)
+
+# Obtain actual compressive strength for the selected samples
+actual_strength = y_test.values[sample_indices]
+
+# Predict compressive strength for the selected samples
+predicted_strength = y_pred[sample_indices]
+
+# Define the width of each bar
+bar_width = 0.35
+
+# Plot a bar chart comparing actual and predicted compressive strength
+plt.figure(figsize=(12, 6))
+
+# Bar chart for actual compressive strength
+plt.bar(range(10), actual_strength, color='blue', width=bar_width, label='Actual')
+
+# Bar chart for predicted compressive strength
+plt.bar([i + bar_width for i in range(10)], predicted_strength, color='orange', width=bar_width, label='Predicted')
+
+plt.xlabel('Sample Number')
+plt.ylabel('Compressive Strength')
+
+# Set x-axis ticks and labels
+plt.xticks([i + bar_width / 2 for i in range(10)], sample_indices)
+
+plt.legend()
+plt.tight_layout()
 plt.show()
