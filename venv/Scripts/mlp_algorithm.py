@@ -22,7 +22,7 @@ current_directory = os.getcwd()
 print("Current Working Directory:", current_directory)
 
 # Construct the relative path to the Excel file
-excel_file_name = "hpc_compressive_strength.xlsx"
+excel_file_name = "compressive-strength-data.xlsx"
 excel_file_path = os.path.join(current_directory, excel_file_name)
 print("Excel File Path:", excel_file_path)
 
@@ -74,7 +74,7 @@ X = df.drop('Concrete compressive strength (MPa, megapascals) ', axis=1)
 y = df['Concrete compressive strength (MPa, megapascals) ']
 
 # Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=22)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=0)
 
 # Step 3: Feature Scaling
 

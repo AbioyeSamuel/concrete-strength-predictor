@@ -11,12 +11,9 @@ from scipy.stats import norm
 from scipy.stats import linregress
 import random
 
-# GitHub raw file link for the 1030 data set
-github_link = "https://github.com/hoangnguyence/hpconcrete/raw/master/data/hpc_compressive_strength_1030.xlsx"
-
 # Load the Excel file into a DataFrame
 current_directory = os.getcwd()
-excel_file_name = "hpc_compressive_strength.xlsx"
+excel_file_name = "compressive-strength-data.xlsx"
 excel_file_path = os.path.join(current_directory, excel_file_name)
 df = pd.read_excel(excel_file_path)
 
@@ -64,7 +61,7 @@ X = df.drop('Concrete compressive strength (MPa, megapascals) ', axis=1)
 y = df['Concrete compressive strength (MPa, megapascals) ']
 
 # Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=0)
 
 # Step 3: Feature Scaling
 
@@ -221,9 +218,10 @@ plt.ylabel('Compressive Strength')
 plt.legend()
 plt.show()
 
-# Select 10 random samples from the dataset
+# Ensure that the sample size does not exceed the available data
+sample_size = min(10, len(y_test))
 random.seed(100)
-sample_indices = random.sample(range(len(y_test)), 10)
+sample_indices = random.sample(range(len(y_test)), sample_size)
 
 # Obtain actual compressive strength for the selected samples
 actual_strength = y_test.values[sample_indices]
@@ -235,20 +233,20 @@ predicted_strength = y_pred[sample_indices]
 bar_width = 0.35
 
 # Plot a bar chart comparing actual and predicted compressive strength
-plt.figure(figsize=(12, 6))
+plt.figure(figsize=(14, 8))
 
 # Bar chart for actual compressive strength
-plt.bar(range(10), actual_strength, color='blue', width=bar_width, label='Actual')
+plt.bar(range(sample_size), actual_strength, color='blue', width=bar_width, label='Actual')
 
 # Bar chart for predicted compressive strength
-plt.bar([i + bar_width for i in range(10)], predicted_strength, color='orange', width=bar_width, label='Predicted')
+plt.bar([i + bar_width for i in range(sample_size)], predicted_strength, color='orange', width=bar_width, label='Predicted')
 
-plt.xlabel('Sample Number')
-plt.ylabel('Compressive Strength')
+plt.xlabel('Sample Number', fontsize=15)
+plt.ylabel('Compressive Strength', fontsize=15)
 
 # Set x-axis ticks and labels
-plt.xticks([i + bar_width / 2 for i in range(10)], sample_indices)
+plt.xticks([i + bar_width / 2 for i in range(sample_size)], sample_indices)
 
-plt.legend()
+plt.legend(fontsize=12)
 plt.tight_layout()
 plt.show()
