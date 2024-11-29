@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, KFold, cross_val_score, GridSearchCV
 from xgboost import XGBRegressor
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from sklearn.preprocessing import StandardScaler
@@ -19,15 +19,13 @@ current_directory = os.getcwd()
 print("Current Working Directory:", current_directory)
 
 # Construct the relative path to the Excel file
-excel_file_name = "compressive-strength-data.xlsx"
+excel_file_name = "hpc_compressive_strength.xlsx"
 excel_file_path = os.path.join(current_directory, excel_file_name)
 print("Excel File Path:", excel_file_path)
 df = pd.read_excel(excel_file_path)
 
 # Display the first few rows of the DataFrame
 print(df.head())
-
-# predicting concrete strength we'll work with existing data from the MDPI repo
 
 # Step 1: Explore the Data
 
@@ -86,57 +84,69 @@ X_train_scaled = scaler.fit_transform(X_train)
 # Transform the testing data
 X_test_scaled = scaler.transform(X_test)
 
-# Step 4: Train the XGBoost Regressor Model
+# Step 4: Hyperparameter Tuning using GridSearchCV
 
-# Initialize the XGBoost Regressor
+# Define the parameter grid for XGBoost
+param_grid = {
+
+    'n_estimators': [100, 150, 200],
+    'learning_rate': [0.01, 0.1, 0.2],
+    'max_depth': [3, 5, 7],
+    'subsample': [0.8, 1.0],
+}
+
+# Initialize the XGBRegressor
 xgb_model = XGBRegressor()
 
-# Train the model
-xgb_model.fit(X_train_scaled, y_train)
+grid_search = GridSearchCV(estimator=xgb_model, param_grid=param_grid, cv=5, scoring='r2', n_jobs=-1, verbose=2)
+grid_search.fit(X_train_scaled, y_train)
 
-# Step 5: Make Predictions on the Test Set
+# Best model and parameters
+best_model = grid_search.best_estimator_
+print("Best Parameters:", grid_search.best_params_)
+print("Best R² Score on Training Set:", grid_search.best_score_)
 
-# Transform the test features using the trained scaler
-X_test_scaled = scaler.transform(X_test)
+# Step 5: Retrain with Best Parameters
 
-# Make predictions on the test set
-y_pred = xgb_model.predict(X_test_scaled)
+# Get the best estimator from the grid search
+best_model = grid_search.best_estimator_
 
-# Step 5.5: Normal Distribution Curve and Bar Charts
-
-plt.figure(figsize=(12, 10))
-
-# Iterate through each feature for plotting
-for i, feature in enumerate(X.columns):
-    plt.subplot(3, 3, i+1)
-    plt.subplots_adjust(hspace=0.5, wspace=0.5)
-
-    # Plot histogram
-    sns.histplot(X[feature], kde=True, color='skyblue', stat='density')
-
-    # Calculate statistics for the current parameter
-    mean_val = X[feature].mean()
-    std_val = X[feature].std()
-    min_val = X[feature].min()
-    max_val = X[feature].max()
-
-    # Add vertical lines for mean, min, and max
-    plt.axvline(mean_val, color='orange', linestyle='dashed', linewidth=2, label='Mean')
-    plt.axvline(min_val, color='green', linestyle='dashed', linewidth=2, label='Min')
-    plt.axvline(max_val, color='red', linestyle='dashed', linewidth=2, label='Max')
-
-    # Add normal distribution curve
-    x_axis = np.linspace(min_val, max_val, 100)
-    plt.plot(x_axis, norm.pdf(x_axis, mean_val, std_val), color='purple', label='Normal Distribution')
-
-    plt.ylabel('Relative Frequency')
-    plt.legend()
+# Step 5.5: Make Predictions on the Test Set
+# Evaluate the Model
+y_pred = best_model.predict(X_test_scaled)
+r2 = r2_score(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+mae = mean_absolute_error(y_test, y_pred)
 
 
-plt.tight_layout()
-plt.show()
 
-# Step 6: Evaluate the Model
+# Cross-validation results
+n_splits = 5
+kf = KFold(n_splits=n_splits, shuffle=True, random_state=0)
+cv_scores = cross_val_score(best_model, X_train_scaled, y_train, scoring='r2', cv=kf)
+print(f"Cross-Validation R² Scores: {cv_scores}")
+print(f"Mean R² Score: {cv_scores.mean()}")
+print(f"Standard Deviation of R² Scores: {cv_scores.std()}")
+# Visualize cross-validation results
+plt.figure(figsize=(8, 6))
+plt.plot(range(1, n_splits + 1), cv_scores, marker='o', label='R² Score per Fold', color='blue')
+plt.axhline(cv_scores.mean(), color='red', linestyle='--', label='Mean R² Score')
+plt.fill_between(
+    range(1, n_splits + 1),
+    cv_scores.mean() - cv_scores.std(),
+    cv_scores.mean() + cv_scores.std(),
+    color='red',
+    alpha=0.2,
+    label='Standard Deviation Range'
+)
+plt.title('Cross-Validation R² Scores', fontsize=15)
+plt.xlabel('Fold', fontsize=12)
+plt.ylabel('R² Score', fontsize=12)
+plt.legend(fontsize=10)
+plt.grid()
+
+
+
 
 # Calculate R-squared
 r2 = r2_score(y_test, y_pred)
@@ -171,15 +181,15 @@ user_df = pd.DataFrame([user_input])
 user_input_scaled = scaler.transform(user_df)
 
 # Make prediction for user input
-user_pred_strength = xgb_model.predict(user_input_scaled)
+user_pred_strength = best_model.predict(user_input_scaled)
 
 # Print the predicted compressive strength
 print(f'Predicted Compressive Strength at {feature} days: {user_pred_strength[0]}')
 
-# Scatter plot for Validation Set with Fitted Line
+# Scatter plot for Test Set with Fitted Line
 plt.figure(figsize=(10, 6))
-plt.scatter(y_test, y_pred, color='blue', label='Validation Set')
-# plt.title('Actual vs. Predicted Compressive Strength in Validation Set')
+plt.scatter(y_test, y_pred, color='green', label='Test Set', alpha=0.7)
+# plt.title('Actual vs. Predicted Compressive Strength')
 plt.xlabel('Actual Compressive Strength')
 plt.ylabel('Predicted Compressive Strength')
 
@@ -198,26 +208,8 @@ plt.text(0.5, 0.85, r2_text, transform=plt.gca().transAxes, fontsize=10, vertica
 plt.legend()
 plt.show()
 
-# Scatter plot for Test Set with Fitted Line
-plt.figure(figsize=(10, 6))
-plt.scatter(y_test, y_pred, color='green', label='Test Set', alpha=0.7)
-# plt.title('Actual vs. Predicted Compressive Strength')
-plt.xlabel('Actual Compressive Strength')
-plt.ylabel('Predicted Compressive Strength')
 
-# Fit a linear regression line
-slope, intercept, _, _, _ = linregress(y_test, y_pred)
-fit_line = slope * y_test + intercept
-plt.plot(y_test, fit_line, '--', color='red', linewidth=2, label='Fitted Line')
 
-# Add the equation of the fitted line to the chart
-equation_text = f'Fitted Equation: y = {slope:.2f}x + {intercept:.2f}'
-plt.text(0.5, 0.92, equation_text, transform=plt.gca().transAxes, fontsize=10, verticalalignment='top')
-
-plt.text(0.5, 0.85, r2_text, transform=plt.gca().transAxes, fontsize=10, verticalalignment='top')
-
-plt.legend()
-plt.show()
 
 # Create an array of sample indices for plotting
 sample_indices = np.arange(len(y_test))
