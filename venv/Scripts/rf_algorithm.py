@@ -87,6 +87,17 @@ rf_model = RandomForestRegressor()
 # Train the model
 rf_model.fit(X_train_scaled, y_train)
 
+# Define the parameter grid for tuning
+param_grid = {
+    'n_estimators': [100, 200, 300],
+    'max_depth': [None, 10, 20, 30],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4],
+    'max_features': ['auto', 'sqrt', 'log2']
+}
+
+
+
 # Step 5: Make Predictions on the Test Set
 
 # Transform the test features using the trained scaler
@@ -113,6 +124,8 @@ print(f'Root Mean Squared Error (RMSE): {rmse}')
 # Calculate Mean Absolute Error (MAE)
 mae = mean_absolute_error(y_test, y_pred)
 print(f'Mean Absolute Error (MAE): {mae}')
+
+
 
 # Step 7: User Input and Prediction
 

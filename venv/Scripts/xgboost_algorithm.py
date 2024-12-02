@@ -10,6 +10,7 @@ import os
 from scipy.stats import norm
 from scipy.stats import linregress
 import random
+from mpl_toolkits.mplot3d import Axes3D
 
 # Load the Excel file into a DataFrame
 # df = pd.read_excel(github_link)
@@ -185,6 +186,67 @@ user_pred_strength = best_model.predict(user_input_scaled)
 
 # Print the predicted compressive strength
 print(f'Predicted Compressive Strength at {feature} days: {user_pred_strength[0]}')
+
+
+
+
+
+# Relative Importance of Features
+feature_importance = best_model.feature_importances_
+relative_importance = 100.0 * (feature_importance / feature_importance.max())
+sorted_idx = np.argsort(relative_importance)
+
+# Short forms mapping for feature names
+feature_short_forms = {
+    "Cement": "cem",
+    "Blast": "bfs",  # Handles "Blast furnace slag"
+    "Fly": "fa",     # Handles "Fly ash"
+    "Water": "wtr",
+    "Superplasticizer": "sp",
+    "Coarse": "cag",   # Handles "Coarse aggregate"
+    "Fine": "fag",     # Handles "Fine aggregate"
+    "Age": "age",
+}
+
+# Apply short forms and sort
+sorted_features = [feature_short_forms[feature.split(' ')[0]] for feature in X.columns[sorted_idx]]
+sorted_relative_importance = relative_importance[sorted_idx]
+
+# Step 1: Create a 3D plot
+fig = plt.figure(figsize=(12, 8))
+ax = fig.add_subplot(111, projection='3d')
+
+# Step 2: Position bars in 3D
+x_pos = np.arange(len(sorted_features)) * 1.5  # Increased spacing between bars
+y_pos = np.zeros(len(sorted_features))  # Y positions (set to zero)
+z_pos = np.zeros(len(sorted_features))  # Z positions (base height of bars)
+
+# Bar dimensions
+bar_width = 0.4
+bar_depth = 0.3
+bar_height = sorted_relative_importance  # Heights correspond to the importance values
+
+# Step 3: Plot 3D bars
+colors = plt.cm.viridis(np.linspace(0, 1, len(sorted_features)))  # Color map based on importance
+ax.bar3d(x_pos, y_pos, z_pos, bar_width, bar_depth, bar_height, color=colors, alpha=0.8)
+
+# Step 4: Add labels and customize the chart
+ax.set_xticks(x_pos)
+ax.set_xticklabels(sorted_features, rotation=45, ha='right', fontsize=10)
+ax.set_yticks([])  # Remove Y-ticks for cleaner look
+ax.set_xlabel('Features', fontsize=12, labelpad=30)
+ax.set_zlabel('Relative Importance (%)', fontsize=12, labelpad=10)
+
+# Annotate each bar with its importance value
+for i in range(len(sorted_relative_importance)):
+    ax.text(x_pos[i], y_pos[i], bar_height[i] + 2, f"{bar_height[i]:.2f}%", color='skyblue', ha='center', fontsize=12)
+
+# Display the plot
+plt.tight_layout()
+plt.show()
+
+
+
 
 # Scatter plot for Test Set with Fitted Line
 plt.figure(figsize=(10, 6))
