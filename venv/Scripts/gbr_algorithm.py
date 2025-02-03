@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+import time
 from scipy.stats import linregress
 from scipy.stats import norm
 import random
@@ -38,6 +39,9 @@ sns.heatmap(corr_matrix, annot=True, cmap='viridis', fmt=".2f", annot_kws={"size
 plt.xticks(rotation=45, ha='right', fontsize=12)
 plt.yticks(rotation=0, fontsize=12)
 plt.show()
+
+# Print the correlation matrix values in the terminal
+print(corr_matrix)
 
 # Handle missing values
 df = df.dropna()
@@ -138,6 +142,17 @@ plt.xlabel('Fold', fontsize=12)
 plt.ylabel('R² Score', fontsize=12)
 plt.legend(fontsize=10)
 plt.grid()
+
+
+# Measure training time
+start_time = time.time()
+best_model.fit(X_train_scaled, y_train)  # Train the model
+training_time = time.time() - start_time
+
+# Output training time
+print(f"Training Time: {training_time:.2f} seconds")
+
+
 
 # Feature importance
 feature_importance = best_model.feature_importances_

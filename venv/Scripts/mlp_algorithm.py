@@ -10,6 +10,7 @@ from scipy.stats import norm
 from scipy.stats import linregress
 import os
 import random
+import time
 
 # Load the Excel file into a DataFrame
 current_directory = os.getcwd()
@@ -112,6 +113,17 @@ plt.ylabel('R² Score', fontsize=12)
 plt.legend(fontsize=10)
 plt.grid()
 plt.show()
+
+
+
+# Measure training time
+start_time = time.time()
+best_model.fit(X_train_scaled, y_train)  # Train the model
+training_time = time.time() - start_time
+
+# Output training time
+print(f"Training Time: {training_time:.2f} seconds")
+
 
 # Step 7: User Input and Prediction
 feature_names = X.columns.tolist()

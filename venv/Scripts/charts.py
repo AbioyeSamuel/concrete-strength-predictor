@@ -78,6 +78,32 @@ print("mpl_toolkits.mplot3d version:", Axes3D.__module__.split('.')[0])
 
 
 
+# Data
+models = ['XGBoost', 'GBR', 'SVR', 'ANN', 'MLP', 'Lasso', 'RF', 'KNN']
+training_times = [0.12, 0.64, 0.09, 1.16, 4.84, 0.00, 0.42, 0.00]
+
+# Plotting
+plt.figure(figsize=(10, 6))
+plt.plot(models, training_times, marker='o', markersize=12, linestyle='-', color='red', label='Training Time (s)')
+
+# Customizing labels
+plt.xlabel('Machine Learning Models', fontsize=16)  # Larger x-axis label
+plt.ylabel('Training Time (seconds)', fontsize=16)  # Larger y-axis label
+
+# Customizing tick labels
+plt.xticks(fontsize=14)  # Larger font size for model names (x-axis ticks)
+plt.yticks(fontsize=14)  # Larger font size for time numbers (y-axis ticks)
+
+# Adding grid and legend
+plt.grid(visible=True, linestyle='--', alpha=0.6)
+plt.legend(fontsize=12)
+plt.tight_layout()
+
+# Show the plot
+plt.show()
+
+
+
 
 # # Correct file path
 # file_path = 'C:/Users/olaol/Downloads/heat-of-hydration-data.xlsx'

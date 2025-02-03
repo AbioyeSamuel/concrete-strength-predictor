@@ -9,6 +9,7 @@ import seaborn as sns
 from scipy.stats import linregress
 import os
 import random
+import time
 
 # Step 1: Load the dataset
 current_directory = os.getcwd()
@@ -86,6 +87,18 @@ plt.legend(fontsize=10)
 plt.grid()
 plt.show()
 
+
+
+# Measure training time
+start_time = time.time()
+best_lasso_model.fit(X_train_scaled, y_train)  # Train the model
+training_time = time.time() - start_time
+
+# Output training time
+print(f"Training Time: {training_time:.2f} seconds")
+
+
+
 # Step 6: Evaluate the Model on the Test Set
 y_pred = best_lasso_model.predict(X_test_scaled)
 r2 = r2_score(y_test, y_pred)
@@ -97,6 +110,8 @@ print(f'R-squared (R2): {r2}')
 print(f'Mean Squared Error (MSE): {mse}')
 print(f'Root Mean Squared Error (RMSE): {rmse}')
 print(f'Mean Absolute Error (MAE): {mae}')
+
+
 
 
 

@@ -7,10 +7,14 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+from scipy.stats import kendalltau
 from scipy.stats import norm
 from scipy.stats import linregress
 import random
+import time
 from mpl_toolkits.mplot3d import Axes3D
+import shap
+
 
 # Load the Excel file into a DataFrame
 # df = pd.read_excel(github_link)
@@ -27,6 +31,57 @@ df = pd.read_excel(excel_file_path)
 
 # Display the first few rows of the DataFrame
 print(df.head())
+
+
+
+
+# Remove units from column names and "Concrete" from the column name "Concrete compressive strength", and make them lowercase
+input_variables = df.iloc[:, :9]
+input_variables.columns = [col.split(' (')[0].replace('Concrete ', '').lower() for col in input_variables.columns]
+# Plot correlation heatmap
+corr_matrix = input_variables.corr()
+plt.figure(figsize=(15, 12))
+sns.heatmap(corr_matrix, annot=True, cmap='viridis', fmt=".2f", annot_kws={"size": 12})
+plt.xticks(rotation=45, ha='right', fontsize=12)
+plt.yticks(rotation=0, fontsize=12)
+plt.show()
+
+# Print the correlation matrix values in the terminal
+print(corr_matrix)
+
+
+
+
+# Compute Kendall's tau nonlinear correlation for each pair of features
+kendall_corr_matrix = input_variables.corr(method='kendall')
+
+# Plot the Kendall's tau correlation heatmap
+plt.figure(figsize=(15, 12))
+sns.heatmap(
+    kendall_corr_matrix, 
+    annot=True, 
+    cmap='cividis', 
+    fmt=".2f", 
+    annot_kws={"size": 16},  # Increase font size of the values
+    cbar_kws={"shrink": 0.8}  # Adjust color bar size if needed
+)
+plt.xticks(rotation=90, ha='right', fontsize=14)  # Increase font size of x-axis labels
+plt.yticks(rotation=0, fontsize=14)  # Increase font size of y-axis labels
+plt.show()
+
+# # Adjust pandas display settings to show all columns
+# pd.set_option('display.max_columns', None)  # Show all columns
+# pd.set_option('display.width', 1000)    
+
+# Print the Kendall's tau correlation matrix values
+print("Kendall's Tau Correlation Matrix:\n", kendall_corr_matrix)
+
+
+
+
+
+
+
 
 # Step 1: Explore the Data
 
@@ -57,6 +112,16 @@ print("\nData Types:\n", data_types)
 summary_stats = df.describe()
 print("\nSummary Statistics:\n", summary_stats)
 
+# # Adjust pandas display settings to show all columns
+# pd.set_option('display.max_columns', None)
+
+# # Generate and print summary statistics
+# summary_stats = df.describe()
+# print("\nSummary Statistics:\n", summary_stats)
+
+# # Optionally, reset the display settings after printing
+# pd.reset_option('display.max_columns')
+
 # Distribution of the target variable (Compressive Strength)
 plt.figure(figsize=(8, 6))
 sns.histplot(df['Concrete compressive strength (MPa, megapascals) '], bins=30, kde=True)
@@ -72,7 +137,7 @@ X = df.drop('Concrete compressive strength (MPa, megapascals) ', axis=1)
 y = df['Concrete compressive strength (MPa, megapascals) ']
 
 # Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
 
 # Step 3: Feature Scaling
 
@@ -120,7 +185,6 @@ mse = mean_squared_error(y_test, y_pred)
 mae = mean_absolute_error(y_test, y_pred)
 
 
-
 # Cross-validation results
 n_splits = 5
 kf = KFold(n_splits=n_splits, shuffle=True, random_state=0)
@@ -145,7 +209,6 @@ plt.xlabel('Fold', fontsize=12)
 plt.ylabel('R² Score', fontsize=12)
 plt.legend(fontsize=10)
 plt.grid()
-
 
 
 
@@ -188,63 +251,13 @@ user_pred_strength = best_model.predict(user_input_scaled)
 print(f'Predicted Compressive Strength at {feature} days: {user_pred_strength[0]}')
 
 
+# Measure training time
+start_time = time.time()
+best_model.fit(X_train_scaled, y_train)  # Train the model
+training_time = time.time() - start_time
 
-
-
-# Relative Importance of Features
-feature_importance = best_model.feature_importances_
-relative_importance = 100.0 * (feature_importance / feature_importance.max())
-sorted_idx = np.argsort(relative_importance)
-
-# Short forms mapping for feature names
-feature_short_forms = {
-    "Cement": "cem",
-    "Blast": "bfs",  # Handles "Blast furnace slag"
-    "Fly": "fa",     # Handles "Fly ash"
-    "Water": "wtr",
-    "Superplasticizer": "sp",
-    "Coarse": "cag",   # Handles "Coarse aggregate"
-    "Fine": "fag",     # Handles "Fine aggregate"
-    "Age": "age",
-}
-
-# Apply short forms and sort
-sorted_features = [feature_short_forms[feature.split(' ')[0]] for feature in X.columns[sorted_idx]]
-sorted_relative_importance = relative_importance[sorted_idx]
-
-# Step 1: Create a 3D plot
-fig = plt.figure(figsize=(12, 8))
-ax = fig.add_subplot(111, projection='3d')
-
-# Step 2: Position bars in 3D
-x_pos = np.arange(len(sorted_features)) * 1.5  # Increased spacing between bars
-y_pos = np.zeros(len(sorted_features))  # Y positions (set to zero)
-z_pos = np.zeros(len(sorted_features))  # Z positions (base height of bars)
-
-# Bar dimensions
-bar_width = 0.4
-bar_depth = 0.3
-bar_height = sorted_relative_importance  # Heights correspond to the importance values
-
-# Step 3: Plot 3D bars
-colors = plt.cm.viridis(np.linspace(0, 1, len(sorted_features)))  # Color map based on importance
-ax.bar3d(x_pos, y_pos, z_pos, bar_width, bar_depth, bar_height, color=colors, alpha=0.8)
-
-# Step 4: Add labels and customize the chart
-ax.set_xticks(x_pos)
-ax.set_xticklabels(sorted_features, rotation=45, ha='right', fontsize=10)
-ax.set_yticks([])  # Remove Y-ticks for cleaner look
-ax.set_xlabel('Features', fontsize=12, labelpad=30)
-ax.set_zlabel('Relative Importance (%)', fontsize=12, labelpad=10)
-
-# Annotate each bar with its importance value
-for i in range(len(sorted_relative_importance)):
-    ax.text(x_pos[i], y_pos[i], bar_height[i] + 2, f"{bar_height[i]:.2f}%", color='skyblue', ha='center', fontsize=12)
-
-# Display the plot
-plt.tight_layout()
-plt.show()
-
+# Output training time
+print(f"Training Time: {training_time:.2f} seconds")
 
 
 
@@ -331,3 +344,94 @@ plt.xticks([i + bar_width / 2 for i in range(sample_size)], sample_indices)
 plt.legend(fontsize=12)
 plt.tight_layout()
 plt.show()
+
+
+# SHAP Code
+model = XGBRegressor(n_estimators=200, learning_rate=0.1, max_depth=5, subsample=0.8, random_state=0)
+model.fit(X_train_scaled, y_train)
+# Initialize SHAP explainer
+explainer = shap.Explainer(model, X_train_scaled)
+
+# Compute SHAP values
+shap_values = explainer(X_test_scaled)
+
+
+# Assign the actual feature names to the SHAP values object
+shap_values.feature_names = input_variables.columns
+
+# Summary plot (bar chart of feature importance)
+shap.summary_plot(shap_values, X_test, feature_names=input_variables.columns, plot_type="bar")
+
+# Detailed summary plot
+shap.summary_plot(shap_values, X_test, feature_names=input_variables.columns)
+
+# Bar plot of feature importance
+shap.plots.bar(shap_values)
+
+
+# # Visualize cross-validation results
+# plt.figure(figsize=(8, 6))
+# plt.grid()
+# # Fit the model (assuming `best_model` is already trained)
+# explainer = shap.TreeExplainer(best_model)
+# shap_values = explainer.shap_values(X)
+
+# # SHAP summary plot for feature importance
+# shap.summary_plot(shap_values, X, feature_names=input_variables.columns)
+
+# # Relative Importance of Features using SHAP
+# shap_importance = np.abs(shap_values).mean(axis=0)
+# relative_importance = 100.0 * (shap_importance / shap_importance.max())
+# sorted_idx = np.argsort(relative_importance)
+
+# # Short forms mapping for feature names
+# feature_short_forms = {
+#     "Cement": "cem",
+#     "Blast": "bfs",  # Handles "Blast furnace slag"
+#     "Fly": "fa",     # Handles "Fly ash"
+#     "Water": "wtr",
+#     "Superplasticizer": "sp",
+#     "Coarse": "cag",   # Handles "Coarse aggregate"
+#     "Fine": "fag",     # Handles "Fine aggregate"
+#     "Age": "age",
+# }
+
+# # Apply short forms and sort
+# sorted_features = [feature_short_forms[feature.split(' ')[0]] for feature in X.columns[sorted_idx]]
+# sorted_relative_importance = relative_importance[sorted_idx]
+
+# # Step 1: Create a 3D plot
+# fig = plt.figure(figsize=(12, 8))
+# ax = fig.add_subplot(111, projection='3d')
+
+# # Step 2: Position bars in 3D
+# x_pos = np.arange(len(sorted_features)) * 1.5  # Increased spacing between bars
+# y_pos = np.zeros(len(sorted_features))  # Y positions (set to zero)
+# z_pos = np.zeros(len(sorted_features))  # Z positions (base height of bars)
+
+# # Bar dimensions
+# bar_width = 0.4
+# bar_depth = 0.3
+# bar_height = sorted_relative_importance  # Heights correspond to the importance values
+
+# # Step 3: Plot 3D bars
+# colors = plt.cm.viridis(np.linspace(0, 1, len(sorted_features)))  # Color map based on importance
+# ax.bar3d(x_pos, y_pos, z_pos, bar_width, bar_depth, bar_height, color=colors, alpha=0.8)
+
+# # Step 4: Add labels and customize the chart
+# ax.set_xticks(x_pos)
+# ax.set_xticklabels(sorted_features, rotation=45, ha='right', fontsize=10)
+# ax.set_yticks([])  # Remove Y-ticks for cleaner look
+# ax.set_xlabel('Features', fontsize=12, labelpad=30)
+# ax.set_zlabel('Relative Importance (%)', fontsize=12, labelpad=10)
+
+# # Annotate each bar with its importance value
+# for i in range(len(sorted_relative_importance)):
+#     ax.text(x_pos[i], y_pos[i], bar_height[i] + 2, f"{bar_height[i]:.2f}%", color='skyblue', ha='center', fontsize=12)
+
+# # Display the plot
+# plt.tight_layout()
+# plt.show()
+
+
+

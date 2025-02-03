@@ -9,6 +9,7 @@ import seaborn as sns
 from scipy.stats import linregress
 import os
 import random
+import time
 
 # Step 1: Load the dataset
 current_directory = os.getcwd()
@@ -67,6 +68,19 @@ cv_scores = cross_val_score(best_knn_model, X_train_scaled, y_train, scoring='r2
 print(f"Cross-Validation R² Scores: {cv_scores}")
 print(f"Mean R² Score: {cv_scores.mean()}")
 print(f"Standard Deviation of R² Scores: {cv_scores.std()}")
+
+
+
+
+# Measure training time
+start_time = time.time()
+best_knn_model.fit(X_train_scaled, y_train)  # Train the model
+training_time = time.time() - start_time
+
+# Output training time
+print(f"Training Time: {training_time:.2f} seconds")
+
+
 
 # Visualize cross-validation results
 plt.figure(figsize=(8, 6))

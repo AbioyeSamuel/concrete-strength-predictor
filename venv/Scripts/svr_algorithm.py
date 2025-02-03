@@ -7,6 +7,7 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+import time
 from scipy.stats import norm
 from scipy.stats import linregress
 import random
@@ -103,6 +104,19 @@ plt.ylabel('R² Score', fontsize=12)
 plt.legend(fontsize=10)
 plt.grid()
 plt.show()
+
+
+
+# Measure training time
+start_time = time.time()
+best_model.fit(X_train_scaled, y_train)  # Train the model
+training_time = time.time() - start_time
+
+# Output training time
+print(f"Training Time: {training_time:.2f} seconds")
+
+
+
 
 # Step 7: User Input and Prediction
 # Extract feature names from the DataFrame
