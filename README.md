@@ -13,6 +13,6 @@ This repo consists of ml algorithms (XGBoost, GBR, ANN, SVR) used to train our m
 --> Mac: source venv/bin/activate
 --> Windows: .\venv\Scripts\activate
 6. Navigate to the Scripts file and run 'python gbr_algorithm.py' to run the GBR model.
-8. Yayy! Happy collaboration.
+8. Yayy! You're set
 
 
